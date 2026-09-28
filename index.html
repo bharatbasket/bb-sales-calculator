@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bharat Basket — Dealer Rate Calculator</title>
+<style>
+:root{--green:#1f6b45;--light:#eef7f1;--gold:#d6a43a;--text:#1e2a23;--muted:#68756e;--border:#dce5df}
+*{box-sizing:border-box} body{margin:0;background:#f5f7f5;font-family:Inter,Arial,sans-serif;color:var(--text)}
+.wrap{max-width:900px;margin:0 auto;padding:24px 16px 40px}
+.header{background:linear-gradient(135deg,#174f34,#2b8055);color:#fff;border-radius:20px;padding:24px;box-shadow:0 10px 30px #174f3420}
+.brand{font-size:25px;font-weight:800;letter-spacing:.3px}.sub{opacity:.85;margin-top:5px}
+.card{background:#fff;border:1px solid var(--border);border-radius:18px;padding:20px;margin-top:16px;box-shadow:0 5px 18px #1e2a2310}
+label{font-size:13px;font-weight:700;color:var(--muted);display:block;margin-bottom:8px}
+input{width:100%;font-size:20px;padding:14px 15px;border:2px solid #d7e1db;border-radius:12px;outline:none}
+input:focus{border-color:var(--green)}
+.distanceRow{display:grid;grid-template-columns:1fr 120px;gap:12px;align-items:end}
+.unit{padding:14px;border-radius:12px;background:var(--light);font-weight:800;text-align:center;color:var(--green);font-size:18px}
+table{width:100%;border-collapse:collapse;margin-top:4px}
+th{background:#f0f6f2;color:#526159;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+th,td{padding:14px 10px;border-bottom:1px solid var(--border);text-align:right}
+th:first-child,td:first-child{text-align:left}
+td{font-size:16px} td strong{font-size:17px;color:var(--green)}
+.rateCard{border:2px solid #dbece1}
+.badge{display:inline-block;background:#e9f5ed;color:var(--green);padding:5px 9px;border-radius:99px;font-size:12px;font-weight:800}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+button{border:0;border-radius:11px;padding:12px 16px;font-weight:800;cursor:pointer}
+.primary{background:var(--green);color:white}.secondary{background:#eef2ef;color:var(--text)}
+.note{font-size:12px;color:var(--muted);line-height:1.5;margin-top:12px}
+.admin{display:none}.admin.open{display:block}.adminGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.adminGrid input{font-size:15px;padding:10px}
+.footer{text-align:center;color:#89948e;font-size:11px;margin-top:18px}
+@media(max-width:650px){.distanceRow{grid-template-columns:1fr 90px}th,td{padding:11px 6px;font-size:13px}.adminGrid{grid-template-columns:1fr}.wrap{padding:14px 10px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="brand">BHARAT BASKET</div>
+    <div class="sub">Dealer FOR Rate Calculator</div>
+  </div>
+
+  <div class="card">
+    <div class="distanceRow">
+      <div>
+        <label>DEALER DISTANCE</label>
+        <input id="distance" type="number" min="0" max="400" step="1" placeholder="Enter distance">
+      </div>
+      <div class="unit">KM</div>
+    </div>
+    <div class="note">Enter the dealer distance. FOR rates update automatically using the fixed transport slabs.</div>
+  </div>
+
+  <div class="card rateCard">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-size:18px;font-weight:800">Today's Dealer Rates</div>
+      <span id="slab" class="badge">Distance not entered</span>
+    </div>
+    <table>
+      <thead><tr><th>Product</th><th>Ex-Factory</th><th>FOR</th><th>FOR + GST</th></tr></thead>
+      <tbody id="rates"></tbody>
+    </table>
+    <div class="actions">
+      <button class="primary" onclick="shareWhatsApp()">Share on WhatsApp</button>
+      <button class="secondary" onclick="window.print()">Print / Save PDF</button>
+    </div>
+    <div class="note">Packing products use transport ₹/litre. Tin products use transport ₹/tin. GST is applied at 5% to the FOR rate.</div>
+  </div>
+
+  <div class="card">
+    <button class="secondary" onclick="toggleAdmin()">Admin: Update Daily Rates</button>
+    <div id="admin" class="admin">
+      <div class="note">These rates are saved in this browser. For a multi-user live system, this section can later be connected to a database/admin login.</div>
+      <div id="adminGrid" class="adminGrid" style="margin-top:12px"></div>
+      <button class="primary" style="margin-top:12px" onclick="saveRates()">Save Rates</button>
+    </div>
+  </div>
+  <div class="footer">Bharat Basket • Internal Dealer Rate Tool</div>
+</div>
+
+<script>
+const defaultRates = [
+  {name:"Packing", rate:163.53, type:"L"},
+  {name:"15L", rate:2432.09, type:"TIN"},
+  {name:"15Kg", rate:2661.25, type:"TIN"},
+  {name:"13Kg", rate:2321.75, type:"TIN"},
+  {name:"Kachi Ghani 1L", rate:167.53, type:"L"}
+];
+const slabs = [
+  [50,1,15,"0–50 KM"],[100,1.5,22.5,"50–100 KM"],[150,2,30,"100–150 KM"],
+  [200,2.5,37.5,"150–200 KM"],[250,3,45,"200–250 KM"],[300,3.5,52.5,"250–300 KM"],
+  [350,4,60,"300–350 KM"],[400,4.5,67.5,"350–400 KM"]
+];
+let rates = JSON.parse(localStorage.getItem("bb_rates") || "null") || defaultRates;
+
+const money=n=>"₹"+Number(n).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
+function transport(km,type){
+  const s=slabs.find(x=>km<=x[0]);
+  if(!s) return null;
+  return type==="TIN"?s[2]:s[1];
+}
+function render(){
+  const km=Number(document.getElementById("distance").value);
+  const tbody=document.getElementById("rates");
+  tbody.innerHTML="";
+  const badge=document.getElementById("slab");
+  if(!km){badge.textContent="Distance not entered"; return;}
+  const s=slabs.find(x=>km<=x[0]);
+  badge.textContent=s?s[3]:"Above 400 KM";
+  rates.forEach(p=>{
+    const t=transport(km,p.type);
+    const tr=document.createElement("tr");
+    if(t===null){
+      tr.innerHTML=`<td>${p.name}</td><td>${money(p.rate)}</td><td>—</td><td>—</td>`;
+    }else{
+      const forRate=p.rate+t;
+      tr.innerHTML=`<td><strong>${p.name}</strong></td><td>${money(p.rate)}</td><td><strong>${money(forRate)}</strong></td><td>${money(forRate*1.05)}</td>`;
+    }
+    tbody.appendChild(tr);
+  });
+}
+function toggleAdmin(){
+  const a=document.getElementById("admin"); a.classList.toggle("open");
+  if(a.classList.contains("open")){
+    document.getElementById("adminGrid").innerHTML=rates.map((p,i)=>`<div><label>${p.name}</label><input id="r${i}" type="number" step="0.01" value="${p.rate}"></div>`).join("");
+  }
+}
+function saveRates(){
+  rates.forEach((p,i)=>p.rate=Number(document.getElementById("r"+i).value));
+  localStorage.setItem("bb_rates",JSON.stringify(rates)); render(); alert("Daily rates saved.");
+}
+function shareWhatsApp(){
+  const km=Number(document.getElementById("distance").value);
+  if(!km){alert("Please enter distance first.");return;}
+  let msg=`Bharat Basket Dealer FOR Rates\\nDistance: ${km} KM\\n\\n`;
+  rates.forEach(p=>{const t=transport(km,p.type); if(t!==null){const f=p.rate+t;msg+=`${p.name}: ${money(f)} | FOR + GST: ${money(f*1.05)}\\n`;}}); 
+  window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
+}
+document.getElementById("distance").addEventListener("input",render);
+render();
+</script>
+</body>
+</html>
