@@ -27,9 +27,9 @@ td{font-size:16px} td strong{font-size:17px;color:var(--green)}
 button{border:0;border-radius:11px;padding:12px 16px;font-weight:800;cursor:pointer}
 .primary{background:var(--green);color:white}.secondary{background:#eef2ef;color:var(--text)}
 .note{font-size:12px;color:var(--muted);line-height:1.5;margin-top:12px}
-.admin{display:none}.admin.open{display:block}.adminGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.adminGrid input{font-size:15px;padding:10px}
+.status{font-size:12px;color:var(--muted);margin:-4px 0 10px}.status.warn{color:#9a3412;background:#fff4e5;border:1px solid #f5c98b;border-radius:10px;padding:8px 10px;margin:0 0 10px}
 .footer{text-align:center;color:#89948e;font-size:11px;margin-top:18px}
-@media(max-width:650px){.distanceRow{grid-template-columns:1fr 90px}th,td{padding:11px 6px;font-size:13px}.adminGrid{grid-template-columns:1fr}.wrap{padding:14px 10px}}
+@media(max-width:650px){.distanceRow{grid-template-columns:1fr 90px}th,td{padding:11px 6px;font-size:13px}.wrap{padding:14px 10px}}
 </style>
 </head>
 <body>
@@ -55,6 +55,7 @@ button{border:0;border-radius:11px;padding:12px 16px;font-weight:800;cursor:poin
       <div style="font-size:18px;font-weight:800">Today's Dealer Rates</div>
       <span id="slab" class="badge">Distance not entered</span>
     </div>
+    <div id="rateStatus" class="status">Loading today's rates…</div>
     <table>
       <thead><tr><th>Product</th><th>Ex-Factory</th><th>FOR</th><th>FOR + GST</th></tr></thead>
       <tbody id="rates"></tbody>
@@ -66,14 +67,6 @@ button{border:0;border-radius:11px;padding:12px 16px;font-weight:800;cursor:poin
     <div class="note">Packing products use transport ₹/litre. Tin products use transport ₹/tin. GST is applied at 5% to the FOR rate.</div>
   </div>
 
-  <div class="card">
-    <button class="secondary" onclick="toggleAdmin()">Admin: Update Daily Rates</button>
-    <div id="admin" class="admin">
-      <div class="note">These rates are saved in this browser. For a multi-user live system, this section can later be connected to a database/admin login.</div>
-      <div id="adminGrid" class="adminGrid" style="margin-top:12px"></div>
-      <button class="primary" style="margin-top:12px" onclick="saveRates()">Save Rates</button>
-    </div>
-  </div>
   <div class="footer">Bharat Basket • Internal Dealer Rate Tool</div>
 </div>
 
@@ -90,7 +83,56 @@ const slabs = [
   [200,2.5,37.5,"150–200 KM"],[250,3,45,"200–250 KM"],[300,3.5,52.5,"250–300 KM"],
   [350,4,60,"300–350 KM"],[400,4.5,67.5,"350–400 KM"]
 ];
-let rates = JSON.parse(localStorage.getItem("bb_rates") || "null") || defaultRates;
+// Paste the "Publish to web" CSV link of the admin's rates Google Sheet here.
+// Sheet columns: Product | Rate | Unit (L or TIN), with a header row.
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTiFDQZhkdLC_QJnsIE0sXP55E4IHq1KarBxvM5jD5ijVs8MzuCxZk64jQG_8hYwbU4WjU4tKs_Ob_t/pub?gid=0&single=true&output=csv";
+let rates = defaultRates;
+
+function parseCSV(text){
+  const rows=[]; let row=[], cell="", quoted=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(quoted){
+      if(c==='"'){ if(text[i+1]==='"'){cell+='"';i++;} else quoted=false; }
+      else cell+=c;
+    }
+    else if(c==='"') quoted=true;
+    else if(c===','){row.push(cell);cell="";}
+    else if(c==='\n'){row.push(cell);rows.push(row);row=[];cell="";}
+    else if(c!=='\r') cell+=c;
+  }
+  if(cell||row.length){row.push(cell);rows.push(row);}
+  return rows;
+}
+function ratesFromCSV(text){
+  const list=parseCSV(text).slice(1).map(r=>({
+    name:(r[0]||"").trim(),
+    rate:Number((r[1]||"").replace(/[₹,\s]/g,"")),
+    type:(r[2]||"").trim().toUpperCase()
+  })).filter(p=>p.name);
+  if(!list.length||list.some(p=>!(p.rate>0)||!["L","TIN"].includes(p.type))) throw new Error("Rates sheet has a missing or invalid value");
+  return list;
+}
+async function loadRates(){
+  const status=document.getElementById("rateStatus");
+  try{
+    if(!SHEET_CSV_URL) throw new Error("Sheet link not set");
+    const url=SHEET_CSV_URL+(SHEET_CSV_URL.includes("?")?"&":"?")+"t="+Date.now();
+    const res=await fetch(url,{cache:"no-store"});
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    rates=ratesFromCSV(await res.text());
+    try{localStorage.setItem("bb_rates_cache",JSON.stringify(rates));}catch(e){}
+    status.className="status";
+    status.textContent="Live rates loaded at "+new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"});
+  }catch(e){
+    let cached=null;
+    try{cached=JSON.parse(localStorage.getItem("bb_rates_cache"));}catch(_){}
+    rates=cached||defaultRates;
+    status.className="status warn";
+    status.textContent="Could not load today's rates ("+e.message+"). Showing "+(cached?"last loaded":"default")+" rates. Check internet and refresh.";
+  }
+  render();
+}
 
 const money=n=>"₹"+Number(n).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
 function transport(km,type){
@@ -118,25 +160,15 @@ function render(){
     tbody.appendChild(tr);
   });
 }
-function toggleAdmin(){
-  const a=document.getElementById("admin"); a.classList.toggle("open");
-  if(a.classList.contains("open")){
-    document.getElementById("adminGrid").innerHTML=rates.map((p,i)=>`<div><label>${p.name}</label><input id="r${i}" type="number" step="0.01" value="${p.rate}"></div>`).join("");
-  }
-}
-function saveRates(){
-  rates.forEach((p,i)=>p.rate=Number(document.getElementById("r"+i).value));
-  localStorage.setItem("bb_rates",JSON.stringify(rates)); render(); alert("Daily rates saved.");
-}
 function shareWhatsApp(){
   const km=Number(document.getElementById("distance").value);
   if(!km){alert("Please enter distance first.");return;}
-  let msg=`Bharat Basket Dealer FOR Rates\\nDistance: ${km} KM\\n\\n`;
-  rates.forEach(p=>{const t=transport(km,p.type); if(t!==null){const f=p.rate+t;msg+=`${p.name}: ${money(f)} | FOR + GST: ${money(f*1.05)}\\n`;}}); 
+  let msg=`Bharat Basket Dealer FOR Rates\nDistance: ${km} KM\n\n`;
+  rates.forEach(p=>{const t=transport(km,p.type); if(t!==null){const f=p.rate+t;msg+=`${p.name}: ${money(f)} | FOR + GST: ${money(f*1.05)}\n`;}});
   window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
 }
 document.getElementById("distance").addEventListener("input",render);
-render();
+loadRates();
 </script>
 </body>
 </html>
