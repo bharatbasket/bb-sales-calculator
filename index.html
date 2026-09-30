@@ -4,73 +4,124 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bharat Basket — Dealer Rate Calculator</title>
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Libre+Baskerville:wght@700&display=swap" rel="stylesheet">
 <style>
-:root{--green:#1f6b45;--light:#eef7f1;--gold:#d6a43a;--text:#1e2a23;--muted:#68756e;--border:#dce5df}
-*{box-sizing:border-box} body{margin:0;background:#f5f7f5;font-family:Inter,Arial,sans-serif;color:var(--text)}
+/* Brand palette from bbasket.in */
+:root{
+  --red:#8a232a;--red-deep:#6c1b21;--red-logo:#9c1c22;
+  --gold:#d9a441;--gold-soft:#ecc879;
+  --green:#2f6b32;--brown:#5a3a1c;--ink:#2b1a10;
+  --cream:#f3ead7;--cream-soft:#faf5ea;--paper:#fffdf9;
+  --muted:#7a6352;--border:#eadfca;
+  --serif:"Libre Baskerville",Georgia,serif;--sans:Inter,system-ui,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--cream-soft);font-family:var(--sans);color:var(--ink)}
 .wrap{max-width:900px;margin:0 auto;padding:24px 16px 40px}
-.header{background:linear-gradient(135deg,#174f34,#2b8055);color:#fff;border-radius:20px;padding:24px;box-shadow:0 10px 30px #174f3420}
-.brand{font-size:25px;font-weight:800;letter-spacing:.3px}.sub{opacity:.85;margin-top:5px}
-.card{background:#fff;border:1px solid var(--border);border-radius:18px;padding:20px;margin-top:16px;box-shadow:0 5px 18px #1e2a2310}
-label{font-size:13px;font-weight:700;color:var(--muted);display:block;margin-bottom:8px}
-input{width:100%;font-size:20px;padding:14px 15px;border:2px solid #d7e1db;border-radius:12px;outline:none}
-input:focus{border-color:var(--green)}
+
+.header{display:flex;align-items:center;gap:18px;padding:0 24px 0 0;border-radius:20px;overflow:hidden;
+  background:linear-gradient(90deg,var(--red-logo) 0,var(--red-logo) 110px,var(--red-deep) 100%);
+  border-bottom:4px solid var(--gold);box-shadow:0 10px 30px #6c1b2126}
+.logo{width:110px;height:110px;flex:none;display:block}
+.title{font-family:var(--serif);font-size:24px;color:#fff;line-height:1.25}
+.sub{color:var(--gold-soft);font-size:13px;font-weight:600;margin-top:6px;letter-spacing:.3px}
+
+.card{background:var(--paper);border:1px solid var(--border);border-radius:18px;padding:20px;margin-top:16px;box-shadow:0 5px 18px #2b1a100d}
+label{font-size:12px;font-weight:800;color:var(--muted);display:block;margin-bottom:8px;letter-spacing:.6px}
+input{width:100%;font-family:var(--sans);font-size:20px;padding:14px 15px;border:2px solid var(--border);border-radius:12px;outline:none;background:#fff;color:var(--ink)}
+input:focus{border-color:var(--gold)}
 .distanceRow{display:grid;grid-template-columns:1fr 120px;gap:12px;align-items:end}
-.unit{padding:14px;border-radius:12px;background:var(--light);font-weight:800;text-align:center;color:var(--green);font-size:18px}
+.unit{padding:14px;border-radius:12px;background:var(--cream);font-weight:800;text-align:center;color:var(--red);font-size:18px}
+
+.cardHead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.cardTitle{font-family:var(--serif);font-size:18px;color:var(--red-deep)}
+.badge{display:inline-block;background:var(--gold-soft);color:var(--ink);padding:5px 10px;border-radius:99px;font-size:12px;font-weight:800;white-space:nowrap}
+.badge.empty{background:var(--cream);color:var(--muted)}
+
 table{width:100%;border-collapse:collapse;margin-top:4px}
-th{background:#f0f6f2;color:#526159;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
-th,td{padding:14px 10px;border-bottom:1px solid var(--border);text-align:right}
+th{background:var(--cream);color:var(--brown);font-size:11px;text-transform:uppercase;letter-spacing:.6px}
+th,td{padding:14px 12px;border-bottom:1px solid var(--border);text-align:right}
 th:first-child,td:first-child{text-align:left}
-td{font-size:16px} td strong{font-size:17px;color:var(--green)}
-.rateCard{border:2px solid #dbece1}
-.badge{display:inline-block;background:#e9f5ed;color:var(--green);padding:5px 9px;border-radius:99px;font-size:12px;font-weight:800}
+td{font-size:16px;font-variant-numeric:tabular-nums}
+td.name{font-weight:700}
+td.name small{display:block;font-weight:400;font-size:11px;color:var(--muted);margin-top:2px}
+.forCol{background:#fbf1d9}
+th.forCol{background:var(--gold-soft);color:var(--ink)}
+td.forCol{font-weight:800;font-size:17px;color:var(--red)}
+td.dash{color:var(--muted);font-weight:400}
+
 .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
-button{border:0;border-radius:11px;padding:12px 16px;font-weight:800;cursor:pointer}
-.primary{background:var(--green);color:white}.secondary{background:#eef2ef;color:var(--text)}
+button{font-family:var(--sans);border:0;border-radius:11px;padding:12px 16px;font-weight:800;font-size:14px;cursor:pointer}
+.whatsapp{background:var(--green);color:#fff}
+.secondary{background:var(--cream);color:var(--brown);border:1px solid var(--border)}
 .note{font-size:12px;color:var(--muted);line-height:1.5;margin-top:12px}
-.status{font-size:12px;color:var(--muted);margin:-4px 0 10px}.status.warn{color:#9a3412;background:#fff4e5;border:1px solid #f5c98b;border-radius:10px;padding:8px 10px;margin:0 0 10px}
-.footer{text-align:center;color:#89948e;font-size:11px;margin-top:18px}
-@media(max-width:650px){.distanceRow{grid-template-columns:1fr 90px}th,td{padding:11px 6px;font-size:13px}.wrap{padding:14px 10px}}
+.status{font-size:12px;color:var(--muted);margin:-4px 0 10px}
+.status.warn{color:#9a3412;background:#fff4e5;border:1px solid #f5c98b;border-radius:10px;padding:8px 10px;margin:0 0 10px}
+.footer{text-align:center;color:var(--muted);font-size:11px;margin-top:18px}
+
+@media(max-width:650px){
+  .wrap{padding:14px 10px}
+  .header{gap:12px;padding-right:14px;background:linear-gradient(90deg,var(--red-logo) 0,var(--red-logo) 78px,var(--red-deep) 100%)}
+  .logo{width:78px;height:78px}
+  .title{font-size:18px}.sub{font-size:11px;margin-top:4px}
+  .distanceRow{grid-template-columns:1fr 90px}
+  th,td{padding:11px 7px}td{font-size:14px}td.forCol{font-size:15px}th{font-size:10px}
+  .actions button{flex:1}
+}
+@media print{
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body{background:#fff}.wrap{padding:0}
+  .card,.header{box-shadow:none}
+  .actions,.status,.distanceCard .note{display:none}
+}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="header">
-    <div class="brand">BHARAT BASKET</div>
-    <div class="sub">Dealer FOR Rate Calculator</div>
-  </div>
+  <header class="header">
+    <img class="logo" src="logo.png" alt="Bharat Basket">
+    <div>
+      <div class="title">Dealer Rate Calculator</div>
+      <div class="sub">Ex-Factory &amp; FOR rates · incl. 5% GST</div>
+    </div>
+  </header>
 
-  <div class="card">
+  <div class="card distanceCard">
     <div class="distanceRow">
       <div>
-        <label>DEALER DISTANCE</label>
-        <input id="distance" type="number" min="0" max="400" step="1" placeholder="Enter distance">
+        <label for="distance">DEALER DISTANCE</label>
+        <input id="distance" type="number" inputmode="numeric" min="0" max="400" step="1" placeholder="Enter distance">
       </div>
       <div class="unit">KM</div>
     </div>
     <div class="note">Enter the dealer distance. FOR rates update automatically using the fixed transport slabs.</div>
   </div>
 
-  <div class="card rateCard">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <div style="font-size:18px;font-weight:800">Today's Dealer Rates</div>
-      <span id="slab" class="badge">Distance not entered</span>
+  <div class="card">
+    <div class="cardHead">
+      <div class="cardTitle">Today's Dealer Rates</div>
+      <span id="slab" class="badge empty">Distance not entered</span>
     </div>
     <div id="rateStatus" class="status">Loading today's rates…</div>
     <table>
-      <thead><tr><th>Product</th><th>Ex-Factory</th><th>FOR</th><th>FOR + GST</th></tr></thead>
+      <thead><tr><th>Product</th><th>Ex-Factory + GST</th><th class="forCol">FOR + GST</th></tr></thead>
       <tbody id="rates"></tbody>
     </table>
     <div class="actions">
-      <button class="primary" onclick="shareWhatsApp()">Share on WhatsApp</button>
+      <button class="whatsapp" onclick="shareWhatsApp()">Share on WhatsApp</button>
       <button class="secondary" onclick="window.print()">Print / Save PDF</button>
     </div>
-    <div class="note">Packing products use transport ₹/litre. Tin products use transport ₹/tin. GST is applied at 5% to the FOR rate.</div>
+    <div class="note">All rates include 5% GST. Packing products use transport ₹/litre; tin products use transport ₹/tin.</div>
   </div>
 
   <div class="footer">Bharat Basket • Internal Dealer Rate Tool</div>
 </div>
 
 <script>
+const GST = 0.05;
 const defaultRates = [
   {name:"Packing", rate:163.53, type:"L"},
   {name:"15L", rate:2432.09, type:"TIN"},
@@ -84,7 +135,7 @@ const slabs = [
   [350,4,60,"300–350 KM"],[400,4.5,67.5,"350–400 KM"]
 ];
 // Paste the "Publish to web" CSV link of the admin's rates Google Sheet here.
-// Sheet columns: Product | Rate | Unit (L or TIN), with a header row.
+// Sheet columns: Product | Rate | Unit (L or TIN), with a header row. Rates are entered without GST.
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTiFDQZhkdLC_QJnsIE0sXP55E4IHq1KarBxvM5jD5ijVs8MzuCxZk64jQG_8hYwbU4WjU4tKs_Ob_t/pub?gid=0&single=true&output=csv";
 let rates = defaultRates;
 
@@ -135,6 +186,7 @@ async function loadRates(){
 }
 
 const money=n=>"₹"+Number(n).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
+const withGst=n=>n*(1+GST);
 function transport(km,type){
   const s=slabs.find(x=>km<=x[0]);
   if(!s) return null;
@@ -142,29 +194,29 @@ function transport(km,type){
 }
 function render(){
   const km=Number(document.getElementById("distance").value);
+  const badge=document.getElementById("slab");
+  const s=km?slabs.find(x=>km<=x[0]):null;
+  badge.textContent=!km?"Distance not entered":s?s[3]:"Above 400 KM";
+  badge.className=s?"badge":"badge empty";
   const tbody=document.getElementById("rates");
   tbody.innerHTML="";
-  const badge=document.getElementById("slab");
-  if(!km){badge.textContent="Distance not entered"; return;}
-  const s=slabs.find(x=>km<=x[0]);
-  badge.textContent=s?s[3]:"Above 400 KM";
   rates.forEach(p=>{
-    const t=transport(km,p.type);
+    const t=km?transport(km,p.type):null;
     const tr=document.createElement("tr");
-    if(t===null){
-      tr.innerHTML=`<td>${p.name}</td><td>${money(p.rate)}</td><td>—</td><td>—</td>`;
-    }else{
-      const forRate=p.rate+t;
-      tr.innerHTML=`<td><strong>${p.name}</strong></td><td>${money(p.rate)}</td><td><strong>${money(forRate)}</strong></td><td>${money(forRate*1.05)}</td>`;
-    }
+    tr.innerHTML=`<td class="name">${p.name}<small>per ${p.type==="TIN"?"tin":"litre"}</small></td>`+
+      `<td>${money(withGst(p.rate))}</td>`+
+      (t===null?`<td class="forCol dash">—</td>`:`<td class="forCol">${money(withGst(p.rate+t))}</td>`);
     tbody.appendChild(tr);
   });
 }
 function shareWhatsApp(){
   const km=Number(document.getElementById("distance").value);
   if(!km){alert("Please enter distance first.");return;}
-  let msg=`Bharat Basket Dealer FOR Rates\nDistance: ${km} KM\n\n`;
-  rates.forEach(p=>{const t=transport(km,p.type); if(t!==null){const f=p.rate+t;msg+=`${p.name}: ${money(f)} | FOR + GST: ${money(f*1.05)}\n`;}});
+  let msg=`Bharat Basket Dealer Rates (incl. 5% GST)\nDistance: ${km} KM\n\n`;
+  rates.forEach(p=>{
+    const t=transport(km,p.type);
+    msg+=`${p.name}: Ex-Factory + GST: ${money(withGst(p.rate))}`+(t===null?"":` | FOR + GST: ${money(withGst(p.rate+t))}`)+"\n";
+  });
   window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
 }
 document.getElementById("distance").addEventListener("input",render);
