@@ -48,6 +48,7 @@ th:first-child,td:first-child{text-align:left}
 td{font-size:16px;font-variant-numeric:tabular-nums}
 td.name{font-weight:700}
 td.name small{display:block;font-weight:400;font-size:11px;color:var(--muted);margin-top:2px}
+td small.calc{display:block;font-weight:400;font-size:11px;color:var(--muted);margin-top:3px;line-height:1.4}
 .forCol{background:#fbf1d9}
 th.forCol{background:var(--gold-soft);color:var(--ink)}
 td.forCol{font-weight:800;font-size:17px;color:var(--red)}
@@ -187,6 +188,14 @@ async function loadRates(){
 
 const money=n=>"₹"+Number(n).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
 const withGst=n=>n*(1+GST);
+const num=n=>Number(n).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
+const round2=n=>Math.round(n*100)/100;
+// Shows the GST-inclusive total with its working, e.g. "₹184.57 / 175.78 × 1.05 / +₹8.79".
+function gstCell(rate,t){
+  const base=round2(rate+(t||0)), total=round2(withGst(base));
+  const formula=t?`(${num(rate)} + ${num(t)}) × ${1+GST}`:`${num(rate)} × ${1+GST}`;
+  return `${money(total)}<small class="calc">${formula}<br> + ${money(total-base)}</small>`;
+}
 function transport(km,type){
   const s=slabs.find(x=>km<=x[0]);
   if(!s) return null;
@@ -204,8 +213,8 @@ function render(){
     const t=km?transport(km,p.type):null;
     const tr=document.createElement("tr");
     tr.innerHTML=`<td class="name">${p.name}<small>per ${p.type==="TIN"?"tin":"litre"}</small></td>`+
-      `<td>${money(withGst(p.rate))}</td>`+
-      (t===null?`<td class="forCol dash">—</td>`:`<td class="forCol">${money(withGst(p.rate+t))}</td>`);
+      `<td>${gstCell(p.rate)}</td>`+
+      (t===null?`<td class="forCol dash">—</td>`:`<td class="forCol">${gstCell(p.rate,t)}</td>`);
     tbody.appendChild(tr);
   });
 }
