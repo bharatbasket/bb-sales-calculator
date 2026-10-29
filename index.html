@@ -194,7 +194,7 @@ const round2=n=>Math.round(n*100)/100;
 function gstCell(rate,t){
   const base=round2(rate+(t||0)), total=round2(withGst(base));
   const formula=t?`(${num(rate)} + ${num(t)}) × ${1+GST}`:`${num(rate)} × ${1+GST}`;
-  return `${money(total)}<small class="calc">${formula}<br> + ${money(total-base)}</small>`;
+  return `${money(total)}<small class="calc">(${formula}<br> + ${money(total-base)})</small>`;
 }
 function transport(km,type){
   const s=slabs.find(x=>km<=x[0]);
