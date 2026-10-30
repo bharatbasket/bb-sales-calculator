@@ -190,11 +190,10 @@ const money=n=>"₹"+Number(n).toLocaleString("en-IN",{minimumFractionDigits:2,m
 const withGst=n=>n*(1+GST);
 const num=n=>Number(n).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
 const round2=n=>Math.round(n*100)/100;
-// Shows the GST-inclusive total with its working, e.g. "₹184.57 / 175.78 × 1.05 / +₹8.79".
+// Shows the GST-inclusive total with its pre-GST base, e.g. "₹184.57 (175.78 + GST)".
 function gstCell(rate,t){
-  const base=round2(rate+(t||0)), total=round2(withGst(base));
-  const formula=t?`(${num(rate)} + ${num(t)}) × ${1+GST}`:`${num(rate)} × ${1+GST}`;
-  return `${money(total)}<small class="calc">(${formula}<br> + ${money(total-base)})</small>`;
+  const base=round2(rate+(t||0));
+  return `${money(withGst(base))}<small class="calc">(${num(base)} + GST)</small>`;
 }
 function transport(km,type){
   const s=slabs.find(x=>km<=x[0]);
