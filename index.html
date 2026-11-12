@@ -157,12 +157,15 @@ function parseCSV(text){
   return rows;
 }
 function ratesFromCSV(text){
+  // Rows with no rate yet (e.g. a product added before it is priced) are skipped, not treated as errors.
   const list=parseCSV(text).slice(1).map(r=>({
     name:(r[0]||"").trim(),
-    rate:Number((r[1]||"").replace(/[₹,\s]/g,"")),
+    rawRate:(r[1]||"").replace(/[₹,\s]/g,""),
     type:(r[2]||"").trim().toUpperCase()
-  })).filter(p=>p.name);
-  if(!list.length||list.some(p=>!(p.rate>0)||!["L","TIN"].includes(p.type))) throw new Error("Rates sheet has a missing or invalid value");
+  })).filter(p=>p.name&&p.rawRate).map(p=>({name:p.name,rate:Number(p.rawRate),type:p.type}));
+  if(!list.length) throw new Error("Rates sheet has no rates");
+  const bad=list.find(p=>!(p.rate>0)||!["L","TIN"].includes(p.type));
+  if(bad) throw new Error("Rates sheet has an invalid rate or unit for "+bad.name);
   return list;
 }
 async function loadRates(){
