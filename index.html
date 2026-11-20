@@ -194,9 +194,11 @@ const withGst=n=>n*(1+GST);
 const num=n=>Number(n).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
 const round2=n=>Math.round(n*100)/100;
 // Shows the GST-inclusive total with its pre-GST base, e.g. "₹184.57 (175.78 + GST)".
+// Rounds the pre-GST base first so the page and the WhatsApp message always show the same total.
+const gstTotal=(rate,t)=>withGst(round2(rate+(t||0)));
 function gstCell(rate,t){
   const base=round2(rate+(t||0));
-  return `${money(withGst(base))}<small class="calc">(${num(base)} + GST)</small>`;
+  return `${money(gstTotal(rate,t))}<small class="calc">(${num(base)} + GST)</small>`;
 }
 // Pack size in litres read from an L product's name ("500ML" → 0.5, "5 L" → 5); 1 when the name has no size.
 function packLitres(p){
@@ -237,7 +239,7 @@ function shareWhatsApp(){
   let msg=`Bharat Basket Dealer Rates (incl. 5% GST)\nDistance: ${km} KM\n\n`;
   rates.forEach(p=>{
     const t=transport(km,p);
-    msg+=`${p.name}: Ex-Factory + GST: ${money(withGst(p.rate))}`+(t===null?"":` | FOR + GST: ${money(withGst(p.rate+t))}`)+"\n";
+    msg+=`${p.name}: Ex-Factory + GST: ${money(gstTotal(p.rate))}`+(t===null?"":` | FOR + GST: ${money(gstTotal(p.rate,t))}`)+"\n";
   });
   window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
 }
